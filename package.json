@@ -1,0 +1,10 @@
+{
+  "name": "led",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "debug": "^2.6.8",
+    "promise": "^7.1.1",
+    "rpi-gpio": "^0.8.1"
+  }
+}

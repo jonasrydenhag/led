@@ -1,36 +1,65 @@
-#!/usr/bin/python
+#!/usr/bin/env node
 
-import sys
-import time
-import RPi.GPIO as GPIO
+'use strict';
 
-PIR_PIN = 27
+var debug = require('debug')('led');
+var gpio = require('rpi-gpio');
+var Promise = require('promise');
 
-def run():
-	on()
-	time.sleep(15)
-	off()
+var delay = 15000;
+var pin = 13;
 
-def on():
-	GPIO.setmode(GPIO.BCM)
+var setupPromise = new Promise(function (resolve, reject) {
+  gpio.setup(pin, gpio.DIR_OUT, function (err) {
+    if (err !== undefined) {
+      debug(err);
+      reject(err);
+    } else {
+      debug('Setup done');
+      resolve();
+    }
+  });
+});
 
-	GPIO.setup(PIR_PIN, GPIO.OUT)
+function on() {
+  setupPromise.then(function () {
+    debug('On');
 
-	GPIO.output(PIR_PIN, True)
+    gpio.write(pin, 1);
 
-def off():
-	GPIO.setmode(GPIO.BCM)
+    setTimeout(function() {
+      off();
+    }, delay);
+  });
+}
 
-	GPIO.setup(PIR_PIN, GPIO.OUT)
+function off() {
+  setupPromise.then(function () {
+    debug('Off');
 
-	GPIO.output(PIR_PIN, False)
+    gpio.write(pin, 0);
+  });
+}
 
-	GPIO.cleanup()
+process.on('SIGINT', function () {
+  gpio.destroy(function() {
+    debug("All pins unexported");
 
-if len(sys.argv) > 1:
-	if sys.argv[1] == "run":
-		run()
-	elif sys.argv[1] == "on":
-		on()
-	elif sys.argv[1] == "off":
-		off()
+    process.exit();
+  });
+});
+
+(function(){
+  module.exports.on = on;
+  module.exports.off = off;
+
+  if (module.parent === null) {
+    var state = process.argv[2];
+
+    if (state === "on") {
+      on();
+    } else {
+      off();
+    }
+  }
+})();
